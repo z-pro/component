@@ -1,0 +1,47 @@
+package com.dznet.bindknife.core;
+
+import android.util.Log;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+
+import java.lang.reflect.Field;
+
+public class BindKnife {
+    static private String getFieldValueByFieldName(String fieldName, Object object) {
+        try {
+            Field field = object.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return (String) field.get(object);
+        } catch (Exception ex) {
+            Log.e("BindKnife", ex.getMessage());
+            return null;
+        }
+    }
+
+    static public <T, E> void bind(T t, E e) {
+        Field[] declaredFields = t.getClass().getDeclaredFields();
+        for (Field field : declaredFields) {
+            if (field.isAnnotationPresent(BindBean.class)) {
+                BindBean annotation = field.getAnnotation(BindBean.class);
+                String propertyName = annotation.alias();
+                field.setAccessible(true);
+                try {
+                    String value = getFieldValueByFieldName(propertyName, e);
+                    if (field.getType().equals(TextView.class)) {
+                        TextView textView = (TextView) field.get(t);
+                        if (textView != null) textView.setText(value);
+                    } else if (field.getType().equals(EditText.class)) {
+                        ((EditText) field.get(t)).setText(value);
+                    } else if (field.getType().equals(Button.class)) {
+                        ((Button) field.get(t)).setText(value);
+                    }
+                } catch (Exception ex) {
+                    Log.e("BindKnife", ex.getMessage());
+                    ex.printStackTrace();
+                }
+            }
+        }
+    }
+
+}
